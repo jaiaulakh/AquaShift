@@ -1,0 +1,6 @@
+crop,baseline_yield_t_ha,water_need_m3_ha,cost_cultivation_inr_ha,price_inr_quintal,calories_per_kg,drought_sensitivity_ky,min_land_share,max_land_share,baseline_share
+Paddy,4.5,14000,45000,2183,3600,1.05,0.0,0.60,0.45
+Wheat,3.5,4500,35000,2275,3400,1.00,0.05,0.50,0.30
+Maize,3.0,5000,30000,2090,3650,1.25,0.0,0.30,0.10
+Pulses,1.2,3000,25000,6600,3400,0.60,0.05,0.25,0.08
+Millets,2.0,2500,20000,2350,3300,0.40,0.0,0.30,0.07

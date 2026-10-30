@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/i18n.ts","./src/main.tsx","./src/types.ts","./src/utils.ts","./src/vite-env.d.ts","./src/components/aiinsightcard.tsx","./src/components/allocationview.tsx","./src/components/pipelinestepper.tsx","./src/components/scenariobuilder.tsx","./src/components/stresstestview.tsx","./src/components/watersweepchart.tsx"],"version":"5.9.3"}

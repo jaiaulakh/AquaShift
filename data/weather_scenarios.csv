@@ -1,0 +1,5 @@
+scenario,rainfall_fraction,yield_stress_multiplier,description
+Normal,1.00,1.00,Average monsoon with typical distribution
+Deficit,0.75,0.85,Below-average monsoon — moderate water stress
+Severe Deficit,0.50,0.65,Drought year — significant crop water stress
+Surplus,1.20,0.95,Above-average monsoon — minor waterlogging risk
