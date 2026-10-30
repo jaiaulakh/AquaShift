@@ -1,7 +1,7 @@
 import React from 'react'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, ReferenceLine, Legend,
+  CartesianGrid, ReferenceLine,
 } from 'recharts'
 import type { SweepResult } from '../types'
 import type { Strings } from '../i18n'
@@ -34,13 +34,11 @@ export function WaterSweepChart({ data, loading, strings }: WaterSweepChartProps
   const tipping = data.tipping_point_pct
 
   return (
-    <div className="card space-y-4">
+    <section className="data-section sweep-section">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-stone-800">{strings.waterSweep}</h2>
+        <h2>{strings.waterSweep}</h2>
         {tipping !== null && (
-          <div className="text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-1 text-red-700">
-            {strings.tippingPoint}: {tipping}%
-          </div>
+          <div className="tipping-note">{strings.tippingPoint}: {tipping}%</div>
         )}
       </div>
 
@@ -64,14 +62,13 @@ export function WaterSweepChart({ data, loading, strings }: WaterSweepChartProps
             }}
             labelFormatter={(l) => `Water: ${l}%`}
           />
-          <Legend />
           {tipping !== null && (
             <ReferenceLine
               x={tipping}
               yAxisId="income"
-              stroke="#ef4444"
+              stroke="#b3392b"
               strokeDasharray="5 5"
-              label={{ value: 'Tipping Point', fill: '#ef4444', fontSize: 11 }}
+              label={{ value: 'Tipping point', fill: '#b3392b', fontSize: 11 }}
             />
           )}
           <Line
@@ -79,7 +76,7 @@ export function WaterSweepChart({ data, loading, strings }: WaterSweepChartProps
             type="monotone"
             dataKey="income"
             name="Income (₹L)"
-            stroke="#2563eb"
+            stroke="#1f6f96"
             strokeWidth={2}
             dot={false}
           />
@@ -88,7 +85,7 @@ export function WaterSweepChart({ data, loading, strings }: WaterSweepChartProps
             type="monotone"
             dataKey="paddyPct"
             name="Paddy (%)"
-            stroke="#16a34a"
+            stroke="#2f7a55"
             strokeWidth={2}
             dot={false}
             strokeDasharray="4 2"
@@ -96,9 +93,9 @@ export function WaterSweepChart({ data, loading, strings }: WaterSweepChartProps
         </LineChart>
       </ResponsiveContainer>
 
-      <p className="text-xs text-stone-500 text-center">
+      <p className="chart-note">
         Each point is a full optimizer run. {data.points.length} scenarios simulated.
       </p>
-    </div>
+    </section>
   )
 }

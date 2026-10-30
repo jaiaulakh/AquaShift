@@ -78,6 +78,19 @@ python scripts/dev.py
 - **Backend API:** http://localhost:8000 (OpenAPI docs: http://localhost:8000/docs)
 - **Frontend:** http://localhost:5173
 
+If those ports are already in use, run the services separately on alternate ports:
+
+```powershell
+# Backend
+uvicorn backend.main:app --host 0.0.0.0 --port 8001
+
+# Frontend (from the frontend directory)
+$env:VITE_API_URL = "http://localhost:8001"
+npm run dev -- --host 0.0.0.0 --port 5174
+```
+
+The alternate endpoints are http://localhost:8001 and http://localhost:5174.
+
 ### CLI Demo (works fully offline, no LLM key needed)
 
 ```bash

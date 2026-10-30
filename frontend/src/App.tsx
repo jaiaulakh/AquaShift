@@ -198,6 +198,15 @@ export default function App() {
     setDemoHighlight(-1)
   }
 
+  const resetScenario = () => {
+    setScenario(DEFAULT_SCENARIO)
+    setOptimized(null)
+    setStressResult(null)
+    setSweepData(null)
+    setError(null)
+    setPipelineStep(0)
+  }
+
   useEffect(() => {
     setScenario((sc) => ({
       ...sc,
@@ -208,54 +217,53 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-stone-50">
       {/* Header */}
-      <header className="bg-green-900 text-white shadow-lg">
+      <header>
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <span className="brand-mark">A</span>
-              <span className="text-xl font-black tracking-tight">{s.appName}</span>
+              <span className="wordmark">{s.appName}</span>
             </div>
             <p className="text-green-300 text-xs">{s.tagline}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
-              className="bg-green-800 hover:bg-green-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg border border-green-600 cursor-pointer transition-colors"
-            >
-              {lang === 'en' ? 'हिं' : 'EN'}
-            </button>
+            <div className="language-toggle" aria-label="Language">
+              <button onClick={() => setLang('en')} className={lang === 'en' ? 'active' : ''}>EN</button>
+              <button onClick={() => setLang('hi')} className={lang === 'hi' ? 'active' : ''}>HI</button>
+            </div>
             {!demoRunning ? (
               <button onClick={runDemo} className="btn-secondary text-sm">
-                {s.loadDemo}
+                Run demo
               </button>
             ) : (
-              <button onClick={stopDemo} className="bg-red-600 hover:bg-red-500 text-white text-sm font-medium px-4 py-2 rounded-xl cursor-pointer">
-                Stop Demo
-              </button>
+              <button onClick={stopDemo} className="btn-secondary text-sm">Exit demo</button>
             )}
-            <span className="text-xs bg-amber-600 px-2 py-1 rounded-full">{s.synthBadge}</span>
+            <span className="text-xs">{s.synthBadge}</span>
           </div>
         </div>
       </header>
 
       {/* Demo Caption */}
       {demoCaption && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800 text-center font-medium">
-          {demoCaption}
+        <div className="demo-caption">
+          <span>{demoCaption}</span>
+          <span>Step {Math.min(pipelineStep + 1, s.steps.length)} of {s.steps.length}</span>
+          <button onClick={() => setPipelineStep(Math.max(0, pipelineStep - 1))}>Previous</button>
+          <button onClick={() => setPipelineStep(Math.min(s.steps.length - 1, pipelineStep + 1))}>Next</button>
+          <button onClick={stopDemo}>Exit</button>
         </div>
       )}
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-700 text-center">
+        <div className="error-message">
           {error}
-          <button className="ml-2 underline" onClick={() => setError(null)}>Dismiss</button>
+          <button className="ml-2 underline" onClick={() => setError(null)}>Retry</button>
         </div>
       )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
         {/* Pipeline Stepper */}
-        <div className="card">
+        <div className="card pipeline-panel">
           <PipelineStepper currentStep={pipelineStep} strings={s} />
         </div>
 
@@ -272,15 +280,16 @@ export default function App() {
             />
 
             {/* Priority Weights */}
-            <div className="card space-y-3">
+            <div className="card space-y-3 priority-panel">
               <h3 className="text-sm font-semibold text-stone-700">{s.weights}</h3>
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-xs text-stone-600">{s.waterFirst}</span>
                 <button
                   onClick={() => setWaterFirst(!waterFirst)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${waterFirst ? 'bg-blue-600' : 'bg-stone-300'}`}
+                  className={`text-toggle-button ${waterFirst ? 'active' : ''}`}
+                  aria-pressed={waterFirst}
                 >
-                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${waterFirst ? 'translate-x-6' : 'translate-x-1'}`} />
+                  {waterFirst ? 'On' : 'Off'}
                 </button>
               </div>
               {(['water', 'food', 'income'] as const).map((key) => (
@@ -310,7 +319,7 @@ export default function App() {
               <button
                 onClick={handleStressTest}
                 disabled={stressLoading || demoRunning}
-                className="btn-secondary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-ghost w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {stressLoading ? s.loading : s.stressTest}
               </button>
@@ -321,17 +330,25 @@ export default function App() {
               >
                 {sweepLoading ? s.loading : s.runSweep}
               </button>
+              <button onClick={resetScenario} className="btn-ghost w-full">Reset</button>
             </div>
           </div>
 
           {/* Right: Results */}
           <div className="lg:col-span-2 space-y-6">
-            {(optimized || baseline) && (
+            {optimized ? (
               <AllocationView
                 baseline={baseline}
-                optimized={optimized ?? baseline}
+                optimized={optimized}
                 strings={s}
               />
+            ) : (
+              <div className="empty-state">
+                <div className="eyebrow">Plan output</div>
+                <h2>No plan yet</h2>
+                <p>Set the scenario and press Optimize, or load the demo scenario.</p>
+                <button onClick={runDemo} className="btn-primary">Load demo scenario</button>
+              </div>
             )}
             {(stressResult || stressLoading) && (
               <StressTestView result={stressResult} loading={stressLoading} strings={s} />

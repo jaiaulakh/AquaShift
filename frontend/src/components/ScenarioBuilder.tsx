@@ -40,8 +40,10 @@ export function ScenarioBuilder({
     if (selected.length > 0) update('selected_crops', selected)
   }
 
+  const signed = (value: number) => `${value > 0 ? '+' : ''}${value}%`
+
   return (
-    <div className="card space-y-5">
+    <div className="card scenario-form space-y-5">
       <div className="section-heading">
         <span className="section-kicker">01</span>
         <h2>{strings.scenarioBuilder}</h2>
@@ -77,9 +79,8 @@ export function ScenarioBuilder({
       <div>
         <label className="label">
           {strings.waterChange}:{' '}
-          <span className={`font-bold ${scenario.water_change_pct < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {scenario.water_change_pct > 0 ? '+' : ''}
-            {scenario.water_change_pct}%
+          <span className="metric-value">
+            {signed(scenario.water_change_pct)}
           </span>
         </label>
         <input
@@ -103,8 +104,7 @@ export function ScenarioBuilder({
         <label className="label">
           {strings.foodTarget}:{' '}
           <span className="font-bold text-amber-700">
-            {scenario.food_target_change_pct > 0 ? '+' : ''}
-            {scenario.food_target_change_pct}%
+            {signed(scenario.food_target_change_pct)}
           </span>
         </label>
         <input
@@ -123,8 +123,7 @@ export function ScenarioBuilder({
         <label className="label">
           {strings.incomeTarget}:{' '}
           <span className="font-bold text-blue-700">
-            {scenario.income_target_change_pct > 0 ? '+' : ''}
-            {scenario.income_target_change_pct}%
+            {signed(scenario.income_target_change_pct)}
           </span>
         </label>
         <input
@@ -141,15 +140,15 @@ export function ScenarioBuilder({
       {/* Rainfall Scenario */}
       <div>
         <label className="label">{strings.rainfallScenario}</label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="rainfall-control">
           {scenarios.map((s) => (
             <button
               key={s}
               onClick={() => update('rainfall_scenario', s)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+              className={`rainfall-option ${
                 scenario.rainfall_scenario === s
-                  ? 'bg-green-700 text-white border-green-700'
-                  : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+                  ? 'selected'
+                  : ''
               }`}
             >
               {RAINFALL_LABELS[s] ?? s}
@@ -161,18 +160,15 @@ export function ScenarioBuilder({
       {/* Crop Selection */}
       <div>
         <label className="label">{strings.crops}</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="crop-checklist">
           {crops.map((crop) => (
             <button
               key={crop}
               onClick={() => toggleCrop(crop)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
-                scenario.selected_crops.includes(crop)
-                  ? 'bg-green-700 text-white border-green-700'
-                  : 'bg-white text-stone-500 border-stone-300'
-              }`}
+              className={`crop-option ${scenario.selected_crops.includes(crop) ? 'selected' : ''}`}
             >
-              {crop}
+              <span className={`crop-swatch crop-${crop.toLowerCase()}`} aria-hidden="true" />
+              <span>{crop}</span>
             </button>
           ))}
         </div>

@@ -1,8 +1,7 @@
 import React from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { OptimizationResult } from '../types'
 import type { Strings } from '../i18n'
-import { CROP_COLORS, CROP_ICONS, formatINR, formatWater, formatTonnes, getKPIStatus } from '../utils'
+import { CROP_COLORS, formatINR, formatWater, formatTonnes } from '../utils'
 
 interface AllocationViewProps {
   baseline: OptimizationResult | null
@@ -10,86 +9,59 @@ interface AllocationViewProps {
   strings: Strings
 }
 
-function KPICard({
+function statusText(gap: number) {
+  if (gap === 0) return 'On target'
+  if (gap < 20) return `Short by ${gap.toFixed(0)}%`
+  return 'Critical'
+}
+
+function KpiColumn({
   label,
   value,
   target,
-  actual,
-  gapPct,
-  icon,
+  gap,
+  color,
 }: {
   label: string
   value: string
-  target?: string
-  actual?: string
-  gapPct: number
-  icon: string
+  target: number
+  gap: number
+  color: string
 }) {
-  const status = getKPIStatus(gapPct)
-  const classes = {
-    green: 'bg-green-50 border-green-200',
-    amber: 'bg-amber-50 border-amber-200',
-    red: 'bg-red-50 border-red-200',
-  }
-  const textClasses = {
-    green: 'text-green-800',
-    amber: 'text-amber-800',
-    red: 'text-red-800',
-  }
-
+  const fill = Math.max(0, Math.min(100, 100 - gap))
   return (
-    <div className={`rounded-xl border-2 p-4 ${classes[status]}`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="kpi-mark">{icon}</span>
-        <span className={`text-sm font-semibold ${textClasses[status]}`}>{label}</span>
+    <div className="kpi-column">
+      <div className="kpi-label">{label}</div>
+      <div className="serif-number">{value}</div>
+      <div className="kpi-bar" aria-hidden="true">
+        <div className="kpi-bar-fill" style={{ width: `${fill}%`, backgroundColor: color }} />
       </div>
-      <div className={`text-2xl font-bold ${textClasses[status]}`}>{value}</div>
-      {target && (
-        <div className="text-xs text-stone-500 mt-1">
-          Target: {target} · Actual: {actual}
-          {gapPct > 0 && (
-            <span className="text-red-600 font-medium"> · {gapPct.toFixed(0)}% gap</span>
-          )}
-        </div>
-      )}
+      <div className="kpi-note">
+        {gap === 0 ? 'On target' : `${statusText(gap)} · target ${target.toLocaleString()}`}
+      </div>
     </div>
   )
 }
 
-function AllocationBar({
-  plan,
-  label,
-}: {
-  plan: OptimizationResult
-  label: string
-}) {
-  const data = plan.allocations.map((a) => ({
-    name: `${CROP_ICONS[a.crop] ?? ''} ${a.crop}`.trim(),
-    crop: a.crop,
-    area: a.area_ha,
-    pct: a.area_pct,
-  }))
-
+function StackedAllocationBar({ plan, label }: { plan: OptimizationResult; label: string }) {
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-stone-600 mb-2">{label}</h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} layout="vertical" barSize={22} margin={{ left: 10, right: 30 }}>
-          <XAxis type="number" unit=" ha" tick={{ fontSize: 11 }} />
-          <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
-          <Tooltip
-            formatter={(v, _name, props) => [
-              `${Number(v).toFixed(0)} ha (${((props.payload as { pct?: number })?.pct ?? 0).toFixed(0)}%)`,
-              (props.payload as { crop?: string })?.crop ?? String(_name),
-            ]}
-          />
-          <Bar dataKey="area" radius={[0, 4, 4, 0]}>
-            {data.map((entry) => (
-              <Cell key={entry.crop} fill={CROP_COLORS[entry.crop] ?? '#94a3b8'} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="allocation-row">
+      <div className="allocation-row-label">
+        <span>{label}</span>
+        <span className="mono-number">{plan.allocations.reduce((sum, item) => sum + item.area_ha, 0).toFixed(0)} ha</span>
+      </div>
+      <div className="stacked-bar" aria-label={`${label} crop allocation`}>
+        {plan.allocations.map((allocation) => (
+          <div
+            key={allocation.crop}
+            className={`stacked-segment ${allocation.crop.toLowerCase()}`}
+            style={{ width: `${allocation.area_pct}%`, backgroundColor: CROP_COLORS[allocation.crop] ?? '#6e8b4d' }}
+            title={`${allocation.crop}: ${allocation.area_ha.toFixed(0)} ha`}
+          >
+            {allocation.area_pct >= 10 ? allocation.crop : ''}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -97,111 +69,100 @@ function AllocationBar({
 export function AllocationView({ baseline, optimized, strings }: AllocationViewProps) {
   if (!optimized) return null
 
-  const waterGap = optimized.water_gap_pct
-  const foodGap = optimized.food_gap_pct
-  const incomeGap = optimized.income_gap_pct
-
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard
+      <section className="kpi-panel" aria-label="Plan indicators">
+        <KpiColumn
           label={strings.kpiWater}
           value={formatWater(optimized.total_water_m3)}
-          target={formatWater(optimized.water_budget_m3)}
-          actual={formatWater(optimized.total_water_m3)}
-          gapPct={waterGap}
-          icon="W"
+          target={optimized.water_budget_m3}
+          gap={optimized.water_gap_pct}
+          color="#1f6f96"
         />
-        <KPICard
+        <KpiColumn
           label={strings.kpiFood}
           value={formatTonnes(optimized.total_production_tonnes)}
-          target={formatTonnes(optimized.food_target_tonnes)}
-          actual={formatTonnes(optimized.total_production_tonnes)}
-          gapPct={foodGap}
-          icon="F"
+          target={optimized.food_target_tonnes}
+          gap={optimized.food_gap_pct}
+          color="#b8891f"
         />
-        <KPICard
+        <KpiColumn
           label={strings.kpiIncome}
           value={formatINR(optimized.total_income_inr)}
-          target={formatINR(optimized.income_target_inr)}
-          actual={formatINR(optimized.total_income_inr)}
-          gapPct={incomeGap}
-          icon="I"
+          target={optimized.income_target_inr}
+          gap={optimized.income_gap_pct}
+          color="#2f7a55"
         />
-      </div>
+      </section>
 
-      {/* Before / After bars */}
-      <div className="card">
-        <h2 className="text-lg font-bold text-stone-800 mb-4">{strings.comparison}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {baseline && <AllocationBar plan={baseline} label={strings.baseline} />}
-          <AllocationBar plan={optimized} label={strings.optimized} />
+      <section className="data-section">
+        <div className="eyebrow">{strings.comparison}</div>
+        <h2>Crop allocation</h2>
+        {baseline && <StackedAllocationBar plan={baseline} label={strings.baseline} />}
+        <StackedAllocationBar plan={optimized} label={strings.optimized} />
+        <div className="crop-legend">
+          {optimized.allocations.map((allocation) => (
+            <span key={allocation.crop}><span className="crop-swatch" style={{ backgroundColor: CROP_COLORS[allocation.crop] }} />{allocation.crop}</span>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Delta table */}
-      <div className="card overflow-x-auto">
-        <h3 className="text-sm font-semibold text-stone-600 mb-3">Allocation Changes</h3>
-        <table className="w-full text-sm">
+      <section className="data-section">
+        <div className="eyebrow">Allocation changes</div>
+        <table>
           <thead>
-            <tr className="border-b border-stone-200">
-              <th className="text-left py-2 text-stone-600">Crop</th>
-              <th className="text-right py-2 text-stone-600">Area (ha)</th>
-              <th className="text-right py-2 text-stone-600">Share</th>
-              <th className="text-right py-2 text-stone-600">Δ vs Baseline</th>
-              <th className="text-right py-2 text-stone-600">Yield (t/ha)</th>
-              <th className="text-right py-2 text-stone-600">Income</th>
+            <tr>
+              <th>Crop</th>
+              <th>Baseline ha</th>
+              <th>Optimized ha</th>
+              <th>Change</th>
+              <th>Yield t/ha</th>
+              <th>Income</th>
             </tr>
           </thead>
           <tbody>
-            {optimized.allocations.map((a) => (
-              <tr key={a.crop} className="border-b border-stone-100 hover:bg-stone-50">
-                <td className="py-2 font-medium">
-                  {CROP_ICONS[a.crop]} {a.crop}
-                </td>
-                <td className="text-right py-2">{a.area_ha.toFixed(0)}</td>
-                <td className="text-right py-2">{a.area_pct.toFixed(0)}%</td>
-                <td className={`text-right py-2 font-medium ${a.delta_area_ha < -1 ? 'text-red-600' : a.delta_area_ha > 1 ? 'text-green-600' : 'text-stone-500'}`}>
-                  {a.delta_area_ha > 0 ? '+' : ''}{a.delta_area_ha.toFixed(0)} ha
-                </td>
-                <td className="text-right py-2">{a.yield_t_ha.toFixed(2)}</td>
-                <td className="text-right py-2">{formatINR(a.income_inr)}</td>
-              </tr>
-            ))}
+            {optimized.allocations.map((allocation) => {
+              const baselineArea = allocation.area_ha - allocation.delta_area_ha
+              return (
+                <tr key={allocation.crop}>
+                  <td><span className="crop-swatch" style={{ backgroundColor: CROP_COLORS[allocation.crop] }} />{allocation.crop}</td>
+                  <td>{baselineArea.toFixed(0)}</td>
+                  <td>{allocation.area_ha.toFixed(0)}</td>
+                  <td className={allocation.delta_area_ha < 0 ? 'down-value' : allocation.delta_area_ha > 0 ? 'up-value' : ''}>
+                    {allocation.delta_area_ha > 0 ? '+' : ''}{allocation.delta_area_ha.toFixed(0)} ha
+                  </td>
+                  <td>{allocation.yield_t_ha.toFixed(2)}</td>
+                  <td>{formatINR(allocation.income_inr)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
-
-        {/* Solve info */}
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-stone-400">
-          <span>Status: <span className="font-medium text-stone-600">{optimized.status.replace('_', ' ')}</span></span>
-          <span>Mode: <span className="font-medium text-stone-600">{optimized.mode}</span></span>
-          <span>Solve time: <span className="font-medium text-stone-600">{optimized.solve_time_ms.toFixed(1)} ms</span></span>
+        <div className="result-meta">
+          Status: {optimized.status.replace('_', ' ')} · Mode: {optimized.mode} · Solve time: {optimized.solve_time_ms.toFixed(1)} ms
         </div>
-      </div>
+      </section>
 
-      {/* Shadow prices */}
       {optimized.constraints.length > 0 && (
-        <div className="card">
-          <h3 className="text-sm font-semibold text-stone-600 mb-3">{strings.bindingConstraints}</h3>
-          <div className="space-y-2">
-            {optimized.constraints
-              .filter((c) => c.binding)
-              .map((c) => (
-                <div key={c.name} className="flex items-center justify-between text-sm bg-stone-50 rounded-lg px-3 py-2">
-                  <span className="font-medium">{c.name}</span>
-                  <div className="text-right text-xs text-stone-500 space-x-3">
-                    <span>{c.actual.toLocaleString()} / {c.target.toLocaleString()}</span>
-                    {c.shadow_price !== 0 && (
-                      <span className="text-blue-600">
-                        {strings.shadowPrice}: {Math.abs(c.shadow_price).toFixed(4)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+        <section className="data-section">
+          <div className="eyebrow">{strings.bindingConstraints}</div>
+          <h3>Constraints at the margin</h3>
+          <table>
+            <thead>
+              <tr><th>Constraint</th><th>Actual</th><th>Target</th><th>{strings.shadowPrice}</th></tr>
+            </thead>
+            <tbody>
+              {optimized.constraints.filter((constraint) => constraint.binding).map((constraint) => (
+                <tr key={constraint.name}>
+                  <td>{constraint.name}</td>
+                  <td>{constraint.actual.toLocaleString()}</td>
+                  <td>{constraint.target.toLocaleString()}</td>
+                  <td>{Math.abs(constraint.shadow_price).toFixed(4)}</td>
+                </tr>
               ))}
-          </div>
-        </div>
+            </tbody>
+          </table>
+        </section>
       )}
     </div>
   )

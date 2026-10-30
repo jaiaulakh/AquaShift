@@ -1,31 +1,22 @@
-// Crop labels and colors used by charts and allocation tables.
 export const CROP_COLORS: Record<string, string> = {
-  Paddy: '#16a34a',    // green
-  Wheat: '#d97706',   // amber
-  Maize: '#eab308',   // yellow
-  Pulses: '#7c3aed',  // purple
-  Millets: '#c2410c', // orange-red
-}
-
-export const CROP_ICONS: Record<string, string> = {
-  Paddy: 'PD',
-  Wheat: 'WH',
-  Maize: 'MZ',
-  Pulses: 'PL',
-  Millets: 'ML',
+  Paddy: '#2A7F78',
+  Wheat: '#C0912C',
+  Maize: '#D9A93A',
+  Pulses: '#8A5A3B',
+  Millets: '#6E8B4D',
 }
 
 export const SEVERITY_COLORS: Record<string, string> = {
-  Critical: 'text-red-700 bg-red-100 border-red-300',
-  High: 'text-orange-700 bg-orange-100 border-orange-300',
-  Moderate: 'text-yellow-700 bg-yellow-100 border-yellow-300',
-  Low: 'text-green-700 bg-green-100 border-green-300',
+  Critical: 'critical',
+  High: 'high',
+  Moderate: 'moderate',
+  Low: 'ok',
 }
 
 export const SEVERITY_ICONS: Record<string, string> = {
-  Critical: '!',
-  High: '!',
-  Moderate: 'i',
+  Critical: 'Critical',
+  High: 'High',
+  Moderate: 'Moderate',
   Low: 'OK',
 }
 
